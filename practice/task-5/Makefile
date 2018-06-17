@@ -1,7 +1,7 @@
 .PHONY: pack all run clean
 GENERATED=src/parser.mli src/parser.ml src/lexer.ml
 OCAMLC=ocamlc # ocamlopt for speed
-PACKAGE=hw3.zip
+PACKAGE=hw5.zip
 
 ifeq ($(OS),Windows_NT)
 	DEL=del /f
@@ -21,7 +21,7 @@ main.exe: $(GENERATED) src/tree.cmi
 	cd src && $(OCAMLC) str.cma tree.ml $(GENERATED:src/%=%) main.ml -o ../main.exe
 
 pack: $(GENERATED)
-	zip $(PACKAGE) -r Makefile src base-proofs/
+	zip $(PACKAGE) -r Makefile src
 
 $(GENERATED): src/lexer.mll src/parser.mly
 	ocamllex src/lexer.mll 

@@ -1,0 +1,429 @@
+\documentclass[12pt]{extreport}
+\usepackage{amsmath} 
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{stmaryrd}
+\usepackage{xcolor}
+\usepackage{mathtools}% Loads amsmath
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm,bindingoffset=0cm]{geometry}
+\usepackage{enumitem}
+\usepackage{soul}
+\usepackage{changepage}
+\usepackage{lipsum}
+\usepackage{scrextend}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{minted}
+\usepackage{paracol}
+
+\newsavebox\MBox
+\newcommand\Cline[2][red]{{\sbox\MBox{$#2$}%
+  \rlap{\usebox\MBox}\color{#1}\rule[-1.2\dp\MBox]{\wd\MBox}{0.5pt}}}
+
+\title{Теория типов}
+\author{Александр Петровский \\ По лекциям Штукенберга Д.Г.}
+\date{2018}
+
+\begin{document}
+
+\maketitle
+
+\section{Лекция (04.09.2018)}
+
+Тема: Лямбда исчисление 
+
+
+Терм:
+$\Phi ::= \langle\text{переменная}\rangle \ |\  (\Phi) \ |\underbrace{\ \ \Phi \ \ \Phi \ \ }_\text{аппликация}|\underbrace{\ \lambda\langle\text{переменная}\rangle.\Phi}_\text{абстракция}$
+
+Правила, как писать выражения: 
+\begin{enumerate}[leftmargin=2cm]
+    \item Аппликация - скобки слева направо
+    \item Абстракция - едят все пока могут
+\end{enumerate}
+
+
+    Например: 
+    \begin{enumerate}[leftmargin=2cm]
+        \item $\lambda x.\Cline{(\lambda y.z \ y \ x)}$
+        \item $(\lambda x.\Cline{ \lambda y.z \ y})\ x$
+        \item $\lambda x.\lambda f.f\ x\ (f\ x)\ \lambda y.y \ f$ - это выражение следует воспринимать как \\ $\lambda x.\Big(\lambda f.\big(((f\ x) (f\ x))\ \lambda y.(y \ f)\big)\Big)$ 
+        \item Как следует понимать:
+        \begin{enumerate}
+            \item Как понимать абстракцию: $\lambda x.t$ - $x$ - переменная, $t$ - тело функции.
+            \item Как понимать аппликацию: $f x$ - $f$ - функция, в которую подставляется значение $x$
+        \end{enumerate}
+    \end{enumerate}
+
+
+Мотивирующий пример. 
+
+Пришел школьник первого сентября на пару по математике. Там учитель просит его нарисовать функцию $f(x) = x^2$, с чем школьник успешно справляется и называет этот график "график функции $f$". Но вопрос, почему именно $f$, а не, скажем, $g$. Действительно, ведь учитель мог бы написать $g(x) = x^2$ и от этого график бы не изменился, то есть без лишнего можно сказать, что этот график называется "график функции $x^2$". А в нашей новой терминологии это выглядело бы как $\lambda x.\ x^2$.
+
+
+В программировании вместо $\lambda$ пишут в Haskell-style (ML-style):
+\begin{itemize}[leftmargin=2cm]
+    \item \textbackslash x ->
+    \item fun x ->
+\end{itemize}
+
+По сути, благодаря лямбдам мы можем записать литералы для функций.
+
+Далее используем соглашение: Большие латинские буквы - формулы.
+
+\noindent\textbf{Def.} $\alpha$-эквивалентность
+
+$A =_\alpha B$, если имеет место одно из следующих условий:
+\begin{enumerate}[leftmargin=2cm]
+    \item $A \equiv x$ и $B \equiv y$, где x, y - переменные, а также $x \equiv y$ (т.е. x и y - одна и та же переменная)
+    \item $A \equiv P_1Q_1$ и $B \equiv P_2Q_2$, \\
+          $P_1 =_\alpha P_2$ и $Q_1 =_\alpha Q_2$    
+    \item $A \equiv \lambda x.P_1$ и $B \equiv \lambda y.P_2$ \\
+          t - новая переменая \\
+          $P_1[x := t] =_\alpha P_2[y := t]$
+\end{enumerate}
+
+\noindent\textbf{Enddef.}
+
+Другими словами можно сказать, что формулы $\alpha$-эквивалентны, если эти формулы равны с точностью до переименования связанных переменных
+
+Упражнение: Доказать $\lambda x.\lambda y.x \ y =_\alpha \lambda y.\lambda x.y\ x$
+\begin{enumerate}[leftmargin=3cm]
+    \item Пусть $P_1 = \lambda y.x \ y$, $P_2 = \lambda x.y \ x$
+    \item $P_1[x = t_1] = \lambda y.t_1\ y$, $P_2[x = t_1] = \lambda x.t_1\ y$
+    \item Пусть $Q_1 = t_1\ y$, $Q_1[y := t_2] = t_1\ t_2$ \\
+          Пусть $Q_2 = t_1\ x$, $Q_1[x := t_2] = t_1\ t_2$
+    \item Пусть $A_1 = t_1$, $A_2 = t_1 \Rightarrow [t_1 \equiv t_2] \Rightarrow A_1       =_\alpha A_2$ - по условию 1 из определения $\alpha$-эквивалентности. \\
+          Пусть $B_1 = t_2$, $B_2 = t_2 \Rightarrow [t_2 \equiv t_2] \Rightarrow B_1 =_\alpha B_2$ - по условию 1 из определения $\alpha$-эквивалентности.
+    \item Из пунктов 3 и 4 получаем: \\ $Q_1[y := t_2] = A_1B_1$, $Q_2[x := t_2] = A_2B_2 \Rightarrow[A_1=_\alpha A_2,\ B_1=_\alpha B_2]\Rightarrow Q_1[y := t_2]  =_\alpha Q_2[x := t_2] $ - по условию 2 из определения $\alpha$-эквивалентности.
+    \item Из пунктов 1 и 5 получаем: \\
+        $P_1[x = t_1] = \lambda y.Q_1,\ P_2[x = t_1] = \lambda x.Q_2,\ Q_1[y := t_2]  =_\alpha Q_2[x := t_2] \Rightarrow P_1[x = t_1] =_\alpha P_2[x = t_1]$ - по условию 3 из определения $\alpha$-эквивалентности.
+    \item Из пункта пять получаем: \\ 
+    $\lambda x.\lambda y.x \ y = \lambda x.P_1,\ \lambda y.\lambda x.y\ x = \lambda y.P_2, P_1[x = t_1] =_\alpha P_2[x = t_1] \Rightarrow \lambda x.P_1 =_\alpha \lambda y.P_2$ 
+\end{enumerate}
+
+\noindent\textbf{Def.} $\beta$-редекс 
+
+Если терм имеет вид $(\lambda x.A)B$, то она называется $\beta$-редекс.
+
+\noindent\textbf{Enddef.}
+
+\noindent\textbf{Def.} $\beta$-редукция 
+
+$A$ состоит в отношении $\beta$-редукции с $B$ (обозначается $A \rightarrow_\beta B$), если имеет место одно из следующих утверждений.
+\begin{enumerate}[leftmargin=2cm]
+    \item $A \equiv P_1Q_1,\ B \equiv B_2Q_2$ и либо \\
+    $P_1 =_\alpha P_2,\ Q_1 \rightarrow_\beta Q_2$, либо \\ 
+    $P_1 \rightarrow_\beta P_2,\ Q_1 =_\alpha Q_2$ 
+    \item \begin{enumerate}
+        \item $A \equiv (\lambda x.P)Q$
+        \item $B \equiv P[x := Q]$
+        \item $Q$ - свободно для подстановки вместо $x$ в $P$
+    \end{enumerate}
+    \item $A \equiv \lambda x.P,\ B \equiv \lambda x.Q,\ P \rightarrow_\beta Q$
+\end{enumerate}
+\noindent\textbf{Enddef.}
+
+\vspace{5mm} %5mm vertical space
+
+Например: 
+    \begin{enumerate}[leftmargin=2cm]
+        \item $x \rightarrow_\beta x$ - не $\beta$-редукция 
+        \item $(\lambda x.x)y \rightarrow_\beta y$ - $\beta$-редукция 
+    \end{enumerate} 
+    
+Рассмотрим всем привычне функции, записанные в лямбда-исчислении:
+\begin{itemize}[leftmargin=2cm]
+    \item $T \equiv \lambda a.\lambda b.a$ (истина) 
+    \item $F \equiv \lambda a.\lambda b.b$ (ложь) 
+    \item $If \equiv \lambda c.\lambda t. \lambda e.(c\ t)\ e$ (если) 
+    \item $Not \equiv \lambda a.(\lambda b.\lambda c.a\ c\ b)$ (отрицание)
+    \item $And \equiv \lambda a.\lambda b.a b F$ (и)
+\end{itemize}
+
+И покажем, для чего вообще $\beta$-редукция нужна:
+\begin{itemize}[leftmargin=2cm]
+    \item Запишем if (true) then a else b: \\ 
+          $If\ T\ a\ b \equiv ((\lambda c.\lambda t.\lambda e.c\ t\ e)\ (\lambda a. \lambda b. a))\ \Cline[blue] a\ \Cline[blue] b \rightarrow_\beta \\ $ [по пункту 2 определения $\beta$-редукции: вместо $c$ делаем подстановку $\lambda a. \lambda b. a)$ ] $ \\ \rightarrow_\beta (\lambda t.\lambda e.(\lambda a.\lambda b.a)\ t\ e)\ \Cline[blue] a\ \Cline[blue] b \rightarrow_\beta \\ $ [по пункту 2 определения $\beta$-редукции: терм $(\lambda a.\lambda b.a)\ t$ можем заменить на  $(\lambda b.t)$]
+          $ \\ \rightarrow_\beta (\lambda t.\lambda e.(\lambda b.t)\ e)\ \Cline[blue] a\ \Cline[blue] b \rightarrow_\beta \\ $
+          [по пункту 2 определения $\beta$-редукции: терм $(\lambda b.t)e$ можно заменить на $t$]
+          $\\ \rightarrow_\beta (\lambda t.\lambda e.t)\ \Cline[blue] a\ \Cline[blue] b \rightarrow_\beta \\ $
+          [по пункту 2 определения $\beta$-редукции: терм $(\lambda t.\lambda e.t)\ a$ можно заменить на $\lambda e.a)$]
+          $\\ \rightarrow_\beta(\lambda e.a)\ \Cline[blue]b \rightarrow_\beta a$ \\
+          Также вовремя действий выше мы активрно пользовались пунктом 1 из определения $\beta$-редукции, например, когда переносили $\Cline[blue]{a}$  $\Cline[blue] b$.
+    \item $Not\ T \equiv \lambda b.\lambda c. T\ c\ b \equiv \lambda b.\lambda c.          (\lambda a.\lambda b.a)\ c\ b \rightarrow_\beta \lambda b.\lambda               c.(\lambda y.c)\ b \rightarrow_\beta \lambda b. \lambda c.c \equiv F$
+\end{itemize}
+
+\noindent\textbf{Def.} Чёрчевские нумералы
+
+$\lambda f.\lambda x.f^{(n)}\ x$ - чёрчевский нумерал, где $f^{(n)} = \begin{cases}
+f(f^{(n - 1)}\ x), & \mbox{ n > 0} \\ x, & \mbox{ n = 0 }
+\end{cases}$
+
+\noindent\textbf{Enddef.}
+    
+На основе определения можем легко определить некоторые операции:
+\begin{itemize}[leftmargin=2cm]
+    \item $(+1) = \lambda n.\lambda f.\lambda x.n\ f\ (f\ x)$
+    \item $(+) = \lambda m. \lambda n.m\ (+1)\ n$
+\end{itemize}    
+
+На эту тему можно почитать Стефана Клини.
+
+\noindent\textbf{Задачи по теме.}
+\begin{itemize}
+    \item Применить $\beta$-редукцию к формуле $(\lambda f.\lambda x. f\ (f\ x))\ (\lambda f.\lambda x. f\ (f\ x))$
+    \begin{itemize}
+        \item $\overbrace{(\lambda f.\lambda x. f\ (f\ x))}^{2}\ \overbrace{(\lambda f.\lambda x. f\ (f\ x))}^{2} \rightarrow_\beta \\ \rightarrow_\beta 
+        \lambda x. 2\ (2\ x) \rightarrow_\beta \\ \rightarrow_\beta 
+        \lambda x. 2\ (\lambda t. x\ (x\ t)) =_\alpha 
+        \lambda x. (\lambda f. \lambda s. f\ (f\ s))\ (\lambda t. x\ (x\ t)) \rightarrow_\beta \\ \rightarrow_\beta
+        \lambda x. \lambda s. (\lambda t. x\ (x\ t))((\lambda t. x\ (x\ t))\ s) \rightarrow_\beta \\ \rightarrow_\beta
+        \lambda x. \lambda s (\lambda t. x\ (x\ t))(x\ (x\ s)) \rightarrow_\beta \\ \rightarrow_\beta
+        \lambda x.\lambda s. x\ (x\ (x\ (x\ s))) \equiv 4$
+    \end{itemize}
+    \item Построить формулы для Xor, Or, IsEven, IsZero, *2, (*), pow, (-1):
+    \begin{itemize}
+        \item $Or \equiv \lambda a.\lambda b. a\ T\ b$
+        \item $Xor \equiv \lambda a.\lambda b. a (Not b) b$
+        \item $isZero \equiv \lambda n. n\ (\lambda y. F)\ T$
+        \item $isEven \equiv \lambda n. n\ Not\ T$
+        \item $(*2) \equiv \lambda n. n\ (+)\ n$
+        \item $(*) \equiv \lambda n.\lambda m. n\ ((+)\ m)\ 0$
+        \item $pow \equiv \lambda n.\lambda m. m\ ((*)\ n)\ 1$
+        \item Сперва определим пару $pair$ и две функции $fst$ и $snd$:
+        \begin{itemize}
+            \item $pair \equiv \lambda a.\lambda b.\lambda t. t\ a\ b$
+            \item $fst \equiv \lambda a. a\ T$
+            \item $snd \equiv \lambda a. a\ F$
+        \end{itemize}
+        И рассмотрим пример их использования: $fst\ (pair\ 1\ 2) \equiv (\lambda a. a\ T)\ (\lambda t. t\ 1\ 2) \rightarrow_\beta (\lambda t. t\ 1\ 2)\ T \rightarrow_\beta T\ 1\ 2 \rightarrow_\beta 1$
+        
+        Идея: хотим сделать пару и делать переходы и состояния $(y, x) \rightarrow (x + 1, x)$. 
+        
+        $(-1) \equiv \lambda n. \lambda s. \lambda z. snd\ (n\ (\lambda p. pair\ (s\ (fst\ p))\ fst\ p)\ (pair\ z\ z)) $
+    \end{itemize}
+\end{itemize}
+
+
+
+\section{Лекция (11.09.2018)}
+
+Тема: Классы эквивалентности, теорема Чёрча-Россера
+
+Обозначения: 
+\begin{itemize}[leftmargin=2cm]
+    \item $[A]_{=\alpha}$ - класс эквивалентности.
+    \item $V[P]$ - множество переменных в $P$.
+    \item $FV[P]$ - множество свободных переменных в $P$.
+\end{itemize}
+
+Будем говорит, что $[A]\rightarrow_\beta[B]$, если найдется $A' \in [A]$, $B' \in [B]$, что $A' \rightarrow_\beta B'$.      
+
+
+Утверждение: Пусть в $A$ есть $\beta$-редекс $(\lambda x.P)Q$, но $P[x := Q]$ не может быть произведена. Тогда найдем $y$, что $y \not\in V[P]$, $y \not\in V[Q]$. Сделаем замену $P[x := y]$. Тогда замена $P[x := y][y := Q]$ допустима. 
+
+\vspace{5mm} %5mm vertical space
+
+\noindent\textbf{Lemma} 
+
+$P[x := Q] =_\alpha P[x := y][y := Q]$, если замены возможны.
+
+(Без доказательства)
+
+\noindent\textbf{Def.} Нормальная форма (быть в н.ф.)
+
+    Нормальная форма (н.ф.) - $\lambda$-выражение без $\beta$-редексов.
+    
+\noindent\textbf{Enddef.}
+
+\noindent\textbf{Lemma} 
+
+    $\lambda$-выражение $A$ - в нормальной форме тогда и только тогда, когда нет $B$, что $A\rightarrow_\beta B$
+    
+\noindent\textbf{Def.} Нормальная форма (иметь н.ф.)
+
+    $A$ - нормальная форма $B$, если:
+    \begin{enumerate}[leftmargin=2cm]
+        \item Существует последовательность $A_1,\ A_2,\ \dots,\ A_n$, такая, что $B =_\alpha A_1 \rightarrow_\beta A_2 \rightarrow_\beta \dots \rightarrow_\beta A_n =_\alpha A$
+        \item $A$ - в нормальной форме.
+    \end{enumerate}
+    
+\noindent\textbf{Enddef.}
+
+Правда ли, что если мы разными путями будем редуцировать формулу, то получим один и тот же результат? Для этого сперва рассмотрим формулу: $\Omega = (\lambda x.x x)(\lambda x.x x)$. Заметим, что они $\Omega$ - это $\beta$-редекс, но при редуцировании формулы мы получаем все ту же $\Omega$, т.е. $\Omega \rightarrow_\beta \Omega$.
+
+\noindent\textbf{Lemma} 
+
+    $\Omega$ - не имеет нормальной формы.
+    
+    
+\noindent\textbf{Def.} Комбинатор
+    
+    Комбинатор - это $\lambda$-выражение без свободных переменных.
+    \begin{itemize}[leftmargin=2cm]
+        \item $I \equiv \lambda x.x$ - Identitat
+        \item $K \equiv \lambda a. \lambda b. a$ - Konstant
+    \end{itemize}
+    
+\noindent\textbf{Enddef.}
+
+Рассмотрим $K I \Omega$. Ее можно редуцировать разными способами:
+\begin{enumerate}[leftmargin=2cm]
+    \item $K\ I\ \Omega \rightarrow_\beta K\ I\ \Omega$ - воспользовались $\Omega \rightarrow_\beta \Omega$.
+    \item $K\ I\ \Omega =_\alpha (\lambda a.\lambda b.a)\ I\ \Omega \rightarrow_\beta (\lambda b.I)\ \Omega \rightarrow_\beta I$
+\end{enumerate}
+То есть ответ на выше поставленный вопрос - редцуируя разными путями формулы мы можем получать разные результаты.
+
+\noindent\textbf{Def.} Ромбовидное свойство ($\diamond$) [Конфлюентность]
+    
+    Отношение $R$ - обладает ромбовидным свойством, если при любых $a,\ b,\ c$, таких, что $aRb$, $aRc$, $b \not= c$, найдется $d$: $bRd$, $cRd$.
+    
+\noindent\textbf{Enddef.}
+
+Например:
+\begin{itemize}[leftmargin=2cm]
+    \item $\leq$ - обладает ромбовидным свойством: $a \leq b,\ a \leq c,\ b \not = c$. Положим $d = max(b,\ c)$. Тогда, очевидно, что $b \leq d,\ c \leq d$.
+    \item $>$ на натуральных числах - не обладает ромбовидным свойством: $a = 2,\ b = 1,\ c = 0$. $2 > 1,\ 2 > 0$ и очевидно нет такого $d \in \mathbb{N}$, что $1 > d,\ 0 > d$.
+\end{itemize}
+
+\noindent\textbf{Lemma} 
+
+    Если отношение $R$ обладает ромбовидным свойством, то и $R^*$ (транзитивное рефлексивное замыкание) тоже обладает этим свойством.
+    
+    (Пока без доказательства)
+    
+\vspace{5mm}     
+
+\noindent\textbf{Lemma} Грустная 
+
+    $(\rightarrow_\beta)$ не обладает ромбовидным свойством
+    
+    \textbf{Доказательство}
+    \begin{addmargin}[3em]{3cm}
+    
+    Приведем контрпример: $(\lambda x. x\ x)\ (I\ I)$
+    
+    \end{addmargin}
+\vspace{5mm}     
+    
+    
+\noindent\textbf{Def.} Многошаговая $\beta$-редукция
+    
+    $A \twoheadrightarrow_\beta B$, если найдутся $X_1,\ X_2,\ X_3,\ \dots,\ X_n$, что $A =_\alpha X_1 \rightarrow_\beta X_2 \rightarrow_\beta \dots \rightarrow_\beta X_n =_\alpha B$ (в частности $A \rightarrow_\beta A$). То есть по сути можно сказать, что является рефликсивным и транзитивным замыканием $\rightarrow_\beta$.
+    
+\noindent\textbf{Enddef.}
+
+\noindent\textbf{Def.} Параллельная $\beta$-редукция
+    
+    $A \rightrightarrows_\beta B$, если:
+    \begin{enumerate}[leftmargin=2cm]
+        \item $A =_\alpha B$
+        \item Если $A \equiv P_1\ Q_1,\ B \equiv P_2\ Q_2$ и $P_1 \rightrightarrows_\beta P_2,\ Q_1 \rightrightarrows_\beta Q_2$
+        \item Если $A \equiv \lambda x. P_1,\ B \equiv \lambda x.P_2,\ P_1 \rightrightarrows_\beta P_2$
+        \item Если $A =_\alpha (\lambda x. P)\ Q,\ B =_\alpha P[x := Q]$
+    \end{enumerate}    
+    
+\noindent\textbf{Enddef.}
+\vspace{5mm}   
+
+\noindent\textbf{Lemma}
+    
+    \begin{enumerate}
+        \item $(\rightarrow_\beta) \subseteq (\rightrightarrows_\beta)$ 
+        \item$(\rightrightarrows_\beta) \subseteq (\rightarrow_\beta)^* $ 
+    \end{enumerate}
+     
+    \textbf{Доказательство}
+    \begin{addmargin}[3em]{0}
+    
+        \begin{enumerate}
+        \item Доказательство будем вести по индукции. Рассмотрим $\beta$-редукцию $P \rightarrow_\beta Q$, которая производится по $\beta$-редксу $R = (\lambda x.M)\ N$. В зависимости от расположения $R$ в $P$ можем выделить несколько случаев:
+        \begin{enumerate}
+            \item $P = R$. \\ 
+                \begin{equation*}
+                  \left.\begin{aligned}
+                  N &\rightrightarrows_\beta N \text{ - по определению $\rightrightarrows_\beta$ (1)} \\
+                  M &\rightrightarrows_\beta M \text{ - по определению $\rightrightarrows_\beta$ (1)}
+                \end{aligned}\right\} \Rightarrow P \rightrightarrows_\beta Q \text{ - по определению $\rightrightarrows_\beta$ (4)}
+                \end{equation*}
+            \item $P = S\ W$ и $R$ входит в терм $S$. \\
+                Пусть $Q = S'\ W$ - терм, полученный после $\beta$-редукции $P$. Т.е. $S \rightarrow_\beta S'$ и таким образом по предположению индукции $S \rightrightarrows_\beta S'$. 
+                \begin{equation*}
+                  \left.\begin{aligned}
+                  S &\rightrightarrows_\beta S' \text{ - по предп. индукции} \\
+                  W &\rightrightarrows_\beta W \text{ - по определению $\rightrightarrows_\beta$ (1)}
+                \end{aligned}\right\} \Rightarrow P \rightrightarrows_\beta Q \text{ - по определению $\rightrightarrows_\beta$ (2)}
+                \end{equation*}
+            \item $P = S\ W$ и $R$ входит в терм $W$. \\ Аналогично предыдущему пункту.
+            \item $P = \lambda x.S$ и $R$ входит в терм $S$.
+                Пусть $Q = \lambda x. S'$ - терм, полученный после $\beta$-редукции $P$. Т.е. $S \rightarrow_\beta S'$ и таким образом по предположению индукции $S \rightrightarrows_\beta S'$. 
+                \begin{equation*}
+                  \left.\begin{aligned}
+                  S &\rightrightarrows_\beta S' \text{ - по предп. индукции} \\
+                \end{aligned}\right\} \Rightarrow P \rightrightarrows_\beta Q \text{ - по определению $\rightrightarrows_\beta$ (3)}
+                \end{equation*}
+        \end{enumerate}
+        \item Покажем, что $(\rightarrow_\beta)^* $ удовлетворяет всем условиям из определения $\rightrightarrows_\beta$. Это очевидно :)
+    \end{enumerate}
+    
+    \end{addmargin}
+\vspace{5mm}   
+    
+\noindent\textbf{Lemma}
+
+    $P_1 \rightrightarrows_\beta P_2,\ Q_1 \rightrightarrows_\beta Q_2$, то $P_1[x := Q_1] \rightrightarrows_\beta P_2[x := Q_2]$
+
+    \textbf{Доказательство}
+    \begin{addmargin}[3em]{0}
+  
+    Несложное упражнение. 
+    
+    \end{addmargin}
+\vspace{5mm}   
+
+\noindent\textbf{Th.} Чёрчь, Россер
+    
+    $\twoheadrightarrow__\beta$ - обладает ромбовидным свойством.
+    
+
+\noindent\textbf{Следствие.} 
+
+    Если у $A$ есть н.ф. то она единственна с точностью до ($=_\alpha$).
+    
+\textbf{Доказательство}
+\begin{addmargin}[3em]{3cm}
+
+Доказательство будем вести от противного. Пусть $A \rightarrow_\beta B$ и $A \rightarrow_\beta C$, $B$, $C$ - н.ф. и $B \not =_\alpha C$. По теореме Чёрча-Россера существует такое $D$, что $B \rightarrow_\beta D$ и $C \rightarrow_\beta D$. Тогда $B =_\alpha D$ и  $C =_\alpha D$ (Это следует из н.ф. и того, что длина перехода будет 0 [см. определение многошаговой $\beta$-редукции]). Т.е. $B =_\alpha C$. Противоречие. 
+\end{addmargin}
+
+
+\begin{paracol}{2}[\subsection*{Как проводить $\beta$-редукцию}]
+
+\subsection*{Апликативный порядок} Всегда $\beta$-редуцируем по самому левому из самых сложенных. Это более программистский стиль, но он не всегда может привести к нормальной форме.
+
+\begin{minted}{fsharp}
+let rec = fib n =
+    if n > 2 then 
+        fib(n - 1) + fib(n - 2)
+    else 
+        1;;
+\end{minted}
+
+% \immediate\write18{echo "let x = 2 + 3*4" | fsi> \jobname.tmp}
+% \inputminted{fsharp}{\jobname.tmp}
+
+
+ \switchcolumn \subsection*{Нормальный порядок} Редуцируем "самый левый" редекс. "Самый левый" - окруженный скобками с минимальной позицией, если все возможные скобки в формуле расставлены. Всегда приводит к нормальной форме.
+ 
+ $\Cline{(\lambda a.\lambda b. I)}\ \Omega \rightarrow_\beta (\lambda b. I)\ \Omega \rightarrow_\beta I$
+
+
+
+\end{paracol}
+
+
+\end{document}
+
+
